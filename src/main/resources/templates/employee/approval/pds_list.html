@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>근태관리 시스템 - 자료실</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; }
+    body { display: flex; flex-direction: column; height: 100vh; background-color: #f4f6f9; }
+
+    header { background-color: #1a253f; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+    header .logo { font-size: 20px; font-weight: bold; }
+    header .user-info { font-size: 14px; }
+    header .user-info a { color: #aaa; margin-left: 15px; text-decoration: none; }
+
+    .container { display: flex; flex: 1; }
+
+    nav { width: 220px; background-color: #2c3e50; color: white; padding-top: 20px; }
+    nav ul { list-style: none; }
+    nav ul li a { display: block; padding: 15px 25px; color: #bdc3c7; text-decoration: none; font-size: 15px; }
+    nav ul li.active > a, nav ul li a:hover { background-color: #3f51b5; color: white; font-weight: bold; }
+
+    nav ul li .sub-menu { display: none !important; list-style: none; background-color: #22313f; }
+    nav ul li.open .sub-menu { display: block !important; }
+    nav ul li .sub-menu li a { padding: 10px 10px 10px 40px !important; font-size: 13px; color: #a0aec0; }
+    nav ul li .sub-menu li.active a, nav ul li .sub-menu li a:hover { color: white !important; background-color: #1e2b37 !important; font-weight: bold; }
+
+    main { flex: 1; padding: 30px; overflow-y: auto; }
+
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: bold; }
+
+    .table-card { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+    .search-bar { display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end; }
+    .search-input { width: 250px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+    .btn-search { background-color: #3f51b5; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+
+    .custom-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .custom-table th, .custom-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    .custom-table th { background-color: #f8fafc; color: #475569; font-weight: bold; }
+    .custom-table tr:hover { background-color: #f1f5f9; }
+    .empty-text { text-align: center; padding: 40px; color: #888; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">근태관리 시스템</div>
+  <div class="user-info">
+    <span th:text="${session.loginUser != null ? session.loginUser.empName + ' 님' : '사원 님'}">OOO 님</span>
+    <a href="/employee/mypage">마이페이지</a>
+    <a href="/logout">로그아웃</a>
+  </div>
+</header>
+
+<div class="container">
+  <nav>
+    <ul>
+      <!-- ⭕ 컨트롤러 Mapping 경로에 맞춘 정확한 절대경로 설정 -->
+      <li><a href="/employee/main">㗊 대시보드</a></li>
+      <li><a href="/employee/schedule">🕒 일정관리</a></li>
+      <li><a href="/employee/attendance">📅 근태관리</a></li>
+      <li id="approvalMenuItem" class="open">
+        <a href="javascript:void(0);" onclick="toggleApprovalMenu(event)">📄 전자결재</a>
+        <ul class="sub-menu">
+          <li><a href="/employee/approval/leave">- 휴가 신청</a></li>
+          <li><a href="/employee/approval/overtime">- 시간외수당 신청</a></li>
+          <li class="active"><a href="/employee/approval/pds">- 자료실</a></li>
+        </ul>
+      </li>
+      <li><a href="#">☑️ 결재 상태</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <div class="page-title">서식 자료실</div>
+    </div>
+
+    <div class="table-card">
+      <form action="/employee/approval/pds" method="get" class="search-bar">
+        <input type="text" name="keyword" th:value="${keyword}" placeholder="제목 검색..." class="search-input">
+        <button type="submit" class="btn-search">검색</button>
+      </form>
+
+      <table class="custom-table">
+        <thead>
+        <tr>
+          <th style="width: 80px;">번호</th>
+          <th style="width: 140px;">카테고리</th>
+          <th>제목</th>
+          <th style="width: 150px;">등록일</th>
+          <th style="width: 120px;">첨부파일</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${pdsList}">
+          <td th:text="${item.fileId}">1</td>
+          <td th:text="${item.category != null ? item.category : '일반'}">양식</td>
+          <td th:text="${item.title}">휴가신청서 양식</td>
+          <td th:text="${item.createdAt != null ? item.createdAt : '-'}">2026-09-18</td>
+          <td>
+            <a th:if="${item.fileName != null}" th:href="@{'/download/' + ${item.fileName}}" th:text="${item.fileName}" style="color: #3f51b5; text-decoration: none;">다운로드</a>
+            <span th:if="${item.fileName == null}">-</span>
+          </td>
+        </tr>
+        <tr th:if="${pdsList == null || #lists.isEmpty(pdsList)}">
+          <td colspan="5" class="empty-text">등록된 자료가 없습니다.</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+  function toggleApprovalMenu(event) {
+    event.preventDefault();
+    document.getElementById('approvalMenuItem').classList.toggle('open');
+  }
+</script>
+</body>
+</html>

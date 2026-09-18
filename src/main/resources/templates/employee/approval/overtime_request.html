@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>근태관리 시스템 - 시간외수당 신청</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; }
+    body { display: flex; flex-direction: column; height: 100vh; background-color: #f4f6f9; }
+
+    header { background-color: #1a253f; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+    header .logo { font-size: 20px; font-weight: bold; }
+    header .user-info { font-size: 14px; }
+    header .user-info a { color: #aaa; margin-left: 15px; text-decoration: none; }
+
+    .container { display: flex; flex: 1; }
+
+    nav { width: 220px; background-color: #2c3e50; color: white; padding-top: 20px; }
+    nav ul { list-style: none; }
+    nav ul li a { display: block; padding: 15px 25px; color: #bdc3c7; text-decoration: none; font-size: 15px; }
+    nav ul li.active > a, nav ul li a:hover { background-color: #3f51b5; color: white; font-weight: bold; }
+
+    nav ul li .sub-menu { display: none !important; list-style: none; background-color: #22313f; }
+    nav ul li.open .sub-menu { display: block !important; }
+    nav ul li .sub-menu li a { padding: 10px 10px 10px 40px !important; font-size: 13px; color: #a0aec0; }
+    nav ul li .sub-menu li.active a, nav ul li .sub-menu li a:hover { color: white !important; background-color: #1e2b37 !important; font-weight: bold; }
+
+    main { flex: 1; padding: 30px; overflow-y: auto; }
+
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: bold; }
+
+    .form-card { background: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); max-width: 800px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #2c3e50; }
+    .form-control { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+    .form-control:focus { outline: none; border-color: #3f51b5; }
+    textarea.form-control { resize: vertical; min-height: 100px; }
+    .form-row { display: flex; gap: 20px; }
+    .form-row .form-group { flex: 1; }
+
+    .info-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin-bottom: 20px; font-size: 14px; color: #475569; }
+    .info-box strong { color: #3f51b5; }
+
+    .btn-submit { background-color: #3f51b5; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
+    .btn-submit:hover { background-color: #303f9f; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">근태관리 시스템</div>
+  <div class="user-info">
+    <span th:text="${session.loginUser != null ? session.loginUser.empName + ' 님' : '사원 님'}">OOO 님</span>
+    <a href="/employee/mypage">마이페이지</a>
+    <a href="/logout">로그아웃</a>
+  </div>
+</header>
+
+<div class="container">
+  <nav>
+    <ul>
+      <li><a href="/employee/main">㗊 대시보드</a></li>
+      <li><a href="/employee/schedule">🕒 일정관리</a></li>
+      <li><a href="/employee/attendance">📅 근태관리</a></li>
+      <li id="approvalMenuItem" class="open">
+        <a href="javascript:void(0);" onclick="toggleApprovalMenu(event)">📄 전자결재</a>
+        <ul class="sub-menu">
+          <li><a href="/employee/approval/leave">- 휴가 신청</a></li>
+          <li class="active"><a href="/employee/approval/overtime">- 시간외수당 신청</a></li>
+          <li><a href="/employee/approval/pds">- 자료실</a></li>
+        </ul>
+      </li>
+      <li><a href="#">☑️ 결재 상태</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <div class="page-title">시간외수당 신청</div>
+    </div>
+
+    <div class="form-card">
+      <div class="info-box">
+        이번 달 누적 연장근무: <strong th:text="${overtimeHours + '시간'}">0시간</strong>
+      </div>
+
+      <form action="/employee/approval/overtime" method="post">
+        <div class="form-group">
+          <label>결재자 (상급자)</label>
+          <select name="approverEmpNo" class="form-control" required>
+            <option value="">결재자를 선택하세요</option>
+            <option value="EMP001">김팀장 (EMP001)</option>
+            <option value="EMP000">관리자 (EMP000)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>근무 일자</label>
+          <input type="date" name="workDate" class="form-control" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>시작 시간</label>
+            <input type="time" name="startTime" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>종료 시간</label>
+            <input type="time" name="endTime" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>근무 사유 / 업무 내용</label>
+          <textarea name="reason" class="form-control" placeholder="초과 근무가 필요한 사유 및 진행 업무를 입력해주세요." required></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit">신청서 제출</button>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script>
+  function toggleApprovalMenu(event) {
+    event.preventDefault();
+    document.getElementById('approvalMenuItem').classList.toggle('open');
+  }
+</script>
+</body>
+</html>

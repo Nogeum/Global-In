@@ -1,4 +1,4 @@
-# 자바8 Spring Boot / Maven Project 생성
+# (사전준비)자바8 Spring Boot / Maven Project 생성
 
 ## 1.IntelliJ New Project 생성:
 
@@ -116,7 +116,7 @@ java -jar 패키지명.jar (포트 충돌시 포트지정 : --server.port=80)
 <br>
 
 
-# 백엔드 개발
+# 근태관리 백엔드 개발
 ## 기술스택
 - JDK : 1.8
 - Build : Maven
